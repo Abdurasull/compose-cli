@@ -82,8 +82,11 @@ func (p projectAciHelper) getAciFileVolumes(ctx context.Context, helper login.St
 func (s serviceConfigAciHelper) getAciFileVolumeMounts(volumesCache map[string]bool) ([]containerinstance.VolumeMount, error) {
 	var aciServiceVolumes []containerinstance.VolumeMount
 	for _, sv := range s.Volumes {
+		if strings.Contains(sv.Source, "/") {
+			return []containerinstance.VolumeMount{}, fmt.Errorf("host path (%q) not allowed as volume source, you need to reference an Azure File Share defined in the 'volumes' section", sv.Source)
+		}
 		if !volumesCache[sv.Source] {
-			return []containerinstance.VolumeMount{}, fmt.Errorf("could not find volume source %q", sv.Source)
+			return []containerinstance.VolumeMount{}, fmt.Errorf("could not find volume source %q, service volumes must reference volumes defined in the 'volumes' section", sv.Source)
 		}
 		aciServiceVolumes = append(aciServiceVolumes, containerinstance.VolumeMount{
 			Name:      to.StringPtr(sv.Source),
